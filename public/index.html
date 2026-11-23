@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101114"><meta name="description" content="Stiahni dostupné TikTok video jednoduchým vložením odkazu.">
+<title>TikDrop — TikTok video downloader</title>
+<style>
+:root{color-scheme:dark;--bg:#101114;--panel:#191b20;--line:#2b2e36;--muted:#9a9eaa;--text:#f4f5f7;--accent:#b7f36b;--accentText:#11150b}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#2a3035 0,transparent 55%),var(--bg);color:var(--text);font:16px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+header{height:72px;display:flex;align-items:center;justify-content:space-between;max-width:1080px;width:100%;margin:auto;padding:0 24px}.brand{font-weight:800;letter-spacing:-.04em;font-size:21px}.brand span{color:var(--accent)}.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:30px}
+main{width:min(680px,100% - 32px);margin:clamp(52px,12vh,120px) auto 70px;text-align:center;flex:1}.eyebrow{color:var(--accent);font-size:12px;font-weight:750;letter-spacing:.15em;text-transform:uppercase}h1{font-size:clamp(36px,7vw,60px);line-height:1.03;letter-spacing:-.055em;margin:17px 0}h1 em{font-style:normal;color:var(--accent)}.intro{color:var(--muted);max-width:490px;margin:0 auto 34px}
+.panel{background:rgba(25,27,32,.88);border:1px solid var(--line);border-radius:22px;padding:12px;box-shadow:0 24px 80px #0005;text-align:left}.inputrow{display:flex;gap:8px}.inputrow input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:var(--text);font:inherit;padding:14px 12px}.inputrow input::placeholder{color:#777c88}.paste{border:1px solid var(--line);background:#242730;color:#dfe1e6;border-radius:12px;padding:0 14px;font-weight:650;cursor:pointer}.primary{width:100%;margin-top:9px;border:0;border-radius:13px;background:var(--accent);color:var(--accentText);font-size:15px;font-weight:800;padding:16px;cursor:pointer;transition:transform .15s,opacity .15s}.primary:active{transform:scale(.99)}button:disabled{opacity:.55;cursor:wait}
+.hint{color:#777d89;font-size:12px;margin:13px 5px 2px}.status{display:none;margin-top:18px;padding:14px 16px;border-radius:13px;text-align:left;font-size:14px;background:#20232a;color:#dce0e7}.status.show{display:block}.status.error{color:#ffb7b7;background:#321f23}.result{display:none;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;text-align:left}.result.show{display:block}.preview{width:100%;max-height:360px;object-fit:contain;background:#08090b;border-radius:12px}.result h2{font-size:16px;margin:13px 0 5px}.result p{font-size:12px;color:var(--muted);margin:0 0 12px}.download{display:block;text-decoration:none;text-align:center;background:var(--accent);color:var(--accentText);font-weight:800;padding:14px;border-radius:12px}
+.footnote{font-size:12px;color:#777d89;max-width:560px;margin:25px auto 0}footer{text-align:center;color:#777d89;font-size:12px;padding:22px;border-top:1px solid #25272d}footer a{color:#aeb2bc;text-decoration:none;margin:0 8px}
+@media(max-width:520px){header{height:64px;padding:0 18px}main{margin-top:66px}.tag{font-size:10px}.panel{padding:9px;border-radius:17px}.inputrow input{padding:13px 8px;font-size:14px}.paste{padding:0 11px;font-size:13px}}
+</style>
+</head>
+<body>
+<header><div class="brand">Tik<span>Drop</span></div><div class="tag">MOBILE READY</div></header>
+<main>
+<div class="eyebrow">Rýchlo · jednoducho</div>
+<h1>Video, ktoré chceš.<br><em>Bez zbytočností.</em></h1>
+<p class="intro">Vlož odkaz na verejné TikTok video a skúsime načítať dostupný video súbor.</p>
+<section class="panel">
+ <div class="inputrow"><input id="url" type="url" inputmode="url" autocomplete="off" placeholder="Vlož TikTok URL sem…" aria-label="TikTok URL"><button class="paste" id="paste" type="button">Vložiť</button></div>
+ <button class="primary" id="submit" type="button">Nájsť video <span aria-hidden="true">↗</span></button>
+ <div class="hint">Podporované sú odkazy tiktok.com, vm.tiktok.com a vt.tiktok.com.</div>
+</section>
+<div class="status" id="status" role="status" aria-live="polite"></div>
+<section class="result" id="result">
+ <img class="preview" id="thumb" alt="Náhľad videa" hidden>
+ <h2 id="title">Video pripravené</h2><p id="meta">Dostupný zdroj videa</p>
+ <a class="download" id="download" href="#" download>Stiahnuť video</a>
+</section>
+<p class="footnote">Používaj iba videá, ktoré vlastníš alebo na ktorých stiahnutie máš povolenie. Dostupnosť zdroja závisí od toho, čo TikTok sprístupní verejnej stránke; stiahnutie bez watermarku nie je možné garantovať.</p>
+</main>
+<footer>© <span id="year"></span> TikDrop · <a href="#" id="about">O aplikácii</a></footer>
+<script>
+const $ = id => document.getElementById(id);
+$("year").textContent = new Date().getFullYear();
+function status(message, error=false){$("status").textContent=message;$("status").className="status show"+(error?" error":"");}
+$("paste").addEventListener("click",async()=>{try{$("url").value=await navigator.clipboard.readText();$("url").focus()}catch{$("url").focus();status("Schránku sa nepodarilo prečítať. Vlož odkaz manuálne.",true)}});
+$("submit").addEventListener("click",async()=>{
+ const value=$("url").value.trim();
+ $("result").classList.remove("show");
+ if(!value){status("Najprv vlož TikTok odkaz.",true);return}
+ $("submit").disabled=true;$("submit").textContent="Spracúvam odkaz…";status("Načítavam verejnú stránku TikToku a hľadám dostupné video.");
+ try{
+  const response=await fetch("/api/resolve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url:value})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Video sa nepodarilo spracovať.");
+  $("title").textContent=data.title||"TikTok video";
+  $("meta").textContent=data.duration?`Dĺžka: ${data.duration} s · Dostupný video súbor`:"Dostupný video súbor";
+  if(data.thumbnail){$("thumb").src=data.thumbnail;$("thumb").hidden=false}else{$("thumb").hidden=true}
+  $("download").href=data.downloadUrl;
+  $("result").classList.add("show");
+  status("Video zdroj sa našiel. Môžeš skúsiť stiahnutie.");
+ }catch(e){status(e.message||"Nastala chyba.",true)}
+ finally{$("submit").disabled=false;$("submit").innerHTML='Nájsť video <span aria-hidden="true">↗</span>'}
+});
+$("url").addEventListener("keydown",e=>{if(e.key==="Enter")$("submit").click()});
+$("about").addEventListener("click",e=>{e.preventDefault();status("TikDrop spracúva verejne dostupné údaje TikTok stránky. Neobchádza súkromné účty ani technické ochrany.")});
+</script>
+</body></html>
